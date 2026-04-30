@@ -1,36 +1,401 @@
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" href="images/gift.png" type="image/x-icon">
-  <link rel="stylesheet" href="css/index.css">
-
-  <!-- Document Title -->
   <title>FLOWERS FOR SOMEONE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::after, *::before { padding:0; margin:0; box-sizing:border-box; }
+
+    :root {
+      --rose: #ff6b9d;
+      --rose-pale: #ffc1d6;
+      --rose-deep: #c2185b;
+      --rose-glow: rgba(255,107,157,0.35);
+    }
+
+    body {
+      min-height: 100vh;
+      background: #06020f;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── SLIDESHOW BACKGROUND ── */
+    .slideshow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 1.8s ease-in-out;
+      transform: scale(1.06);
+      transition: opacity 1.8s ease-in-out, transform 8s ease-out;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* dark overlay so text stays readable */
+    .slideshow::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom,
+          rgba(6,2,15,0.55) 0%,
+          rgba(6,2,15,0.25) 40%,
+          rgba(6,2,15,0.25) 60%,
+          rgba(6,2,15,0.72) 100%),
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(100,0,50,0.4) 0%, transparent 70%);
+      z-index: 1;
+    }
+
+    /* ── STARS ── */
+    .stars { position:fixed; inset:0; pointer-events:none; z-index:2; }
+    .star {
+      position:absolute; border-radius:50%; background:white;
+      animation: twinkle var(--dur,3s) var(--del,0s) ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%,100% { opacity:var(--mn,.08); transform:scale(1); }
+      50%      { opacity:var(--mx,.6);  transform:scale(1.4); }
+    }
+
+    /* ── FLOATING PARTICLES ── */
+    .particle {
+      position:fixed; border-radius:50%; pointer-events:none; z-index:2;
+      background: radial-gradient(circle, var(--rose-pale), transparent);
+      animation: float-up var(--fd,10s) var(--fde,0s) ease-in infinite;
+      opacity:0;
+    }
+    @keyframes float-up {
+      0%   { opacity:0; transform:translateY(0) scale(0); }
+      10%  { opacity:0.3; }
+      90%  { opacity:0.1; }
+      100% { opacity:0; transform:translateY(-110vh) scale(1) translateX(var(--fx,20px)); }
+    }
+
+    /* ── DOTS ── */
+    .dots {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,193,214,0.3);
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+    .dot.active {
+      background: var(--rose);
+      width: 20px;
+      border-radius: 3px;
+      box-shadow: 0 0 8px var(--rose-glow);
+    }
+
+    /* ── SCENE ── */
+    .scene {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+      padding: 0 2rem;
+    }
+
+    .eyebrow {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.7rem, 1.8vw, 0.95rem);
+      color: rgba(255,193,214,0.5);
+      letter-spacing: 0.42em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fade-up 1.2s 0.3s ease forwards;
+    }
+
+    .title {
+      display: flex; flex-wrap: wrap;
+      justify-content: center; align-items: center;
+      gap: 0 0.04em; line-height: 1.15;
+    }
+    .title span {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.8rem, 6vw, 4.5rem);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: transparent;
+      background: linear-gradient(135deg, #fff5f8 0%, var(--rose-pale) 35%, var(--rose) 65%, var(--rose-deep) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px var(--rose-glow)) drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+      opacity: 0; display: inline-block;
+      animation: letter-pop 0.65s ease forwards;
+      animation-delay: var(--delay, 0s);
+    }
+    .title .word-gap { width: 0.35em; display: inline-block; }
+
+    .divider {
+      width: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,193,214,0.7), transparent);
+      opacity: 0;
+      animation: divider-grow 1s 3s ease forwards;
+    }
+    @keyframes divider-grow { to { width: min(280px, 55vw); opacity: 0.6; } }
+
+    .sub {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 2.2vw, 1.25rem);
+      color: rgba(255,220,230,0.75);
+      letter-spacing: 0.12em;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+      opacity: 0;
+      animation: fade-up 1.4s 3.3s ease forwards;
+    }
+
+    /* ── BUTTON ── */
+    .btn-wrap { margin-top: 1.4rem; opacity:0; animation: fade-up 1.2s 4s ease forwards; }
+    .btn {
+      text-decoration: none; position: relative;
+      display: inline-flex; align-items: center; gap: 13px;
+      padding: 0 2.4em; height: 3.6em; border-radius: 100px;
+      background: rgba(255,107,157,0.1);
+      border: 1px solid rgba(255,107,157,0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      cursor: pointer;
+      transition: all 500ms cubic-bezier(.23,1,.32,1);
+    }
+    .btn::before {
+      content:''; position:absolute; inset:0; border-radius:100px;
+      background: linear-gradient(135deg, rgba(255,107,157,0.18), rgba(194,24,91,0.1));
+      opacity:0; transition: opacity 500ms ease;
+    }
+    .btn:hover::before { opacity:1; }
+    .btn:hover {
+      border-color: rgba(255,107,157,0.7);
+      box-shadow: 0 0 0 3px rgba(255,107,157,0.12), 0 0 55px rgba(255,107,157,0.28), inset 0 1px 0 rgba(255,255,255,0.15);
+      transform: translateY(-3px);
+    }
+    .btn-icon { width:22px; height:22px; flex-shrink:0; }
+    .btn-icon svg { width:22px; height:22px; transition: transform 600ms cubic-bezier(.23,1,.32,1); }
+    .btn:hover .btn-icon svg { transform: rotate(25deg) scale(1.15); }
+    .btn-text {
+      font-family: 'Cinzel', serif; font-size: 0.82rem;
+      font-weight: 600; letter-spacing: 0.22em;
+      color: rgba(255,220,230,0.85); text-transform: uppercase;
+      transition: color 400ms ease;
+    }
+    .btn:hover .btn-text { color: #fff; }
+
+    @keyframes letter-pop {
+      0%   { opacity:0; transform:translateY(16px) scale(0.84); }
+      60%  { opacity:1; transform:translateY(-4px) scale(1.06); }
+      100% { opacity:1; transform:translateY(0) scale(1); }
+    }
+    @keyframes fade-up {
+      0%   { opacity:0; transform:translateY(18px); }
+      100% { opacity:1; transform:translateY(0); }
+    }
+  
+
+    /* ── CUTE CORNER ICONS ── */
+    .corner-decor {
+      position: fixed;
+      z-index: 12;
+      pointer-events: none;
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+    }
+    .corner-decor span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.4rem;
+      height: 2.4rem;
+      font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+      border-radius: 999px;
+      background: rgba(255, 193, 214, 0.08);
+      border: 1px solid rgba(255, 193, 214, 0.12);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 0 18px rgba(255, 107, 157, 0.14);
+      animation: icon-float 4.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 10px rgba(255,107,157,0.28));
+    }
+    .corner-decor span:nth-child(2) { animation-delay: 0.8s; }
+    .corner-decor span:nth-child(3) { animation-delay: 1.6s; }
+    .corner-top-left { top: 1.1rem; left: 1.1rem; }
+    .corner-top-right { top: 1.1rem; right: 1.1rem; }
+    .corner-bottom-left { bottom: 1.1rem; left: 1.1rem; }
+    .corner-bottom-right { bottom: 1.1rem; right: 1.1rem; }
+
+    @keyframes icon-float {
+      0%, 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.85; }
+      50% { transform: translateY(-7px) rotate(6deg) scale(1.06); opacity: 1; }
+    }
+
+    @media (max-width: 640px) {
+      .corner-decor { gap: 0.35rem; }
+      .corner-decor span {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1rem;
+      }
+    }
+
+  </style>
 </head>
-
 <body>
-  <!-- Background -->
-  <div class="night"></div>
 
-  <!-- Title -->
-  <h1 class="title"></h1>
-
-  <!-- Button -->
-  <div style="position: absolute; top: 60vh; width: 100%; display: flex; justify-content: center;">
-    <a href="flower.html" class="btn">
-      <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
-        <path
-          d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z">
-        </path>
-      </svg>
-
-      <span class="text">Open</span>
-    </a>
+  <!-- Slideshow -->
+  <div class="slideshow" id="slideshow">
+    <div class="slide active" style="background-image:url('images/photo1.jpg')"></div>
+    <div class="slide"        style="background-image:url('images/photo2.jpg')"></div>
   </div>
 
-  <script src="js/index.js"></script>
-</body>
+  <!-- Stars -->
+  <div class="stars" id="stars"></div>
+  <div id="particles"></div>
 
+
+
+  <!-- Cute Corner Icons -->
+  <div class="corner-decor corner-top-left" aria-hidden="true">
+    <span>🌸</span>
+    <span>✨</span>
+    <span>💖</span>
+  </div>
+  <div class="corner-decor corner-top-right" aria-hidden="true">
+    <span>🎀</span>
+    <span>🫧</span>
+    <span>💫</span>
+  </div>
+  <div class="corner-decor corner-bottom-left" aria-hidden="true">
+    <span>🌷</span>
+    <span>🤍</span>
+    <span>✨</span>
+  </div>
+  <div class="corner-decor corner-bottom-right" aria-hidden="true">
+    <span>🦋</span>
+    <span>🌼</span>
+    <span>💗</span>
+  </div>
+
+
+  <!-- Content -->
+  <div class="scene">
+    <p class="eyebrow">a secret, just for you</p>
+    <h1 class="title" id="title"></h1>
+    <div class="divider"></div>
+    <p class="sub">ada yang pengen aku bilang</p>
+    <div class="btn-wrap">
+      <a href="flower.html" class="btn">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3C12 3 7.5 7 7.5 11.5C7.5 14.09 9.69 16 12 16C14.31 16 16.5 14.09 16.5 11.5C16.5 7 12 3 12 3Z" fill="#ff6b9d" opacity="0.95"/>
+            <path d="M12 3C12 3 16.5 7 16.5 11.5C16.5 14.09 14.31 16 12 16C9.69 16 7.5 14.09 7.5 11.5C7.5 7 12 3 12 3Z" fill="#ffc1d6" opacity="0.45"/>
+            <path d="M12 16V21.5" stroke="#5ecb8a" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M12 19.5C12 19.5 9.5 18 8.5 15.5" stroke="#5ecb8a" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M12 18C12 18 14.5 16.5 15.5 14" stroke="#5ecb8a" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="12" cy="11.5" r="2" fill="#f8d978" opacity="0.9"/>
+          </svg>
+        </span>
+        <span class="btn-text">Open</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Dots -->
+  <div class="dots" id="dots"></div>
+
+  <script>
+    // ── STARS
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 100; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      const size = Math.random() * 2 + 0.4;
+      s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;--dur:${(Math.random()*4+2).toFixed(1)}s;--del:${(Math.random()*8).toFixed(1)}s;--mn:${(Math.random()*0.08+0.02).toFixed(2)};--mx:${(Math.random()*0.4+0.25).toFixed(2)};`;
+      starsEl.appendChild(s);
+    }
+
+    // ── PARTICLES
+    const particlesEl = document.getElementById('particles');
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 4 + 2;
+      p.style.cssText = `left:${Math.random()*100}%;bottom:${Math.random()*10}vh;width:${size}px;height:${size}px;--fd:${(Math.random()*8+9).toFixed(1)}s;--fde:${(Math.random()*12).toFixed(1)}s;--fx:${(Math.random()-0.5)*90}px;`;
+      particlesEl.appendChild(p);
+    }
+
+    // ── SLIDESHOW
+    const slides = document.querySelectorAll('.slide');
+    const dotsEl = document.getElementById('dots');
+    let current = 0;
+
+    // build dots
+    slides.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.addEventListener('click', () => goTo(i));
+      dotsEl.appendChild(d);
+    });
+
+    function goTo(n) {
+      slides[current].classList.remove('active');
+      dotsEl.children[current].classList.remove('active');
+      current = n % slides.length;
+      slides[current].classList.add('active');
+      dotsEl.children[current].classList.add('active');
+    }
+
+    setInterval(() => goTo(current + 1), 5000);
+
+    // ── TITLE
+    const WORDS = ['Sayang', 'baca', 'ini',];
+    const titleEl = document.getElementById('title');
+    let charDelay = 0.5;
+    WORDS.forEach((word, wi) => {
+      word.split('').forEach(ch => {
+        const sp = document.createElement('span');
+        sp.textContent = ch;
+        sp.style.setProperty('--delay', `${charDelay}s`);
+        charDelay += 0.09;
+        titleEl.appendChild(sp);
+      });
+      if (wi < WORDS.length - 1) {
+        const gap = document.createElement('span');
+        gap.className = 'word-gap';
+        gap.style.opacity = 1;
+        titleEl.appendChild(gap);
+        charDelay += 0.05;
+      }
+    });
+  </script>
+</body>
 </html>
